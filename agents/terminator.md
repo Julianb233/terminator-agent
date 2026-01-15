@@ -86,6 +86,57 @@ ls ~/.claude/commands/gsd/ 2>/dev/null && echo "GSD_INSTALLED"
 
 If GSD detected, offer integration mode.
 
+### 2.6 Tech Stack Detection
+```bash
+# Detect project tech stack
+cat package.json 2>/dev/null | jq -r '.dependencies, .devDependencies | keys[]' | head -20
+cat pyproject.toml 2>/dev/null | head -30
+cat Cargo.toml 2>/dev/null | head -20
+cat go.mod 2>/dev/null | head -10
+```
+
+Document the tech stack for agent prompts:
+- **Framework:** Next.js, FastAPI, etc.
+- **Language:** TypeScript, Python, Rust, Go
+- **Test runner:** Jest, Pytest, Cargo test
+- **Build command:** npm run build, cargo build
+- **Lint command:** npm run lint, ruff check
+
+---
+
+## PHASE 2.5: PLANNING (GSD-STYLE)
+
+**Before execution, create explicit plans for each task.**
+
+For each issue/task, generate a mini-plan:
+
+```markdown
+## Task Plan: #{issue} - {title}
+
+### Objective
+{What needs to be done}
+
+### Files to Modify
+- `src/auth/middleware.ts` - Add null check
+- `src/types/user.ts` - Export UserContext type
+
+### Implementation Steps
+1. Read existing code in {files}
+2. {Specific change 1}
+3. {Specific change 2}
+4. Run tests: `{test_command}`
+
+### Verification
+- [ ] `{test_command}` passes
+- [ ] `{lint_command}` passes
+- [ ] Manual check: {what to verify}
+
+### Acceptance Criteria
+{From issue or inferred}
+```
+
+Store plans in session state for reference.
+
 ---
 
 ## PHASE 3: WAVE ANALYSIS
@@ -131,6 +182,13 @@ mkdir -p ~/.terminator
   "session_id": "term-{timestamp}",
   "project": "{repo}",
   "mode": "autonomous|standard",
+  "techStack": {
+    "language": "TypeScript",
+    "framework": "Next.js",
+    "testCommand": "npm test",
+    "buildCommand": "npm run build",
+    "lintCommand": "npm run lint"
+  },
   "waves": [
     {
       "wave": 1,
@@ -179,6 +237,13 @@ mcp__claude-flow__memory_usage({
 - **Wave:** 1 of {W}
 - **Status:** executing
 
+## Tech Stack
+- **Language:** {language}
+- **Framework:** {framework}
+- **Test:** `{testCommand}`
+- **Build:** `{buildCommand}`
+- **Lint:** `{lintCommand}`
+
 ## Active Agents
 | Terminal | Codename | Tasks | Status | Branch |
 |----------|----------|-------|--------|--------|
@@ -199,11 +264,20 @@ mcp__claude-flow__memory_usage({
 
 ## PHASE 5: AUTONOMOUS AGENT PROMPT GENERATION
 
-For each terminal, generate a **fully autonomous, self-contained prompt**:
+For each terminal, generate a **fully autonomous, self-contained prompt**.
+
+**CRITICAL: Each terminal MUST be started with:**
+```bash
+claude --dangerously-skip-permissions
+```
+
+This enables frictionless automation - agents won't stop to approve every `git commit` or `npm test`.
 
 ```
 ================================================================
 AGENT {N} PROMPT - Copy and paste into Terminal {N}
+================================================================
+⚠️  START TERMINAL WITH: claude --dangerously-skip-permissions
 ================================================================
 
 # Agent {N}: {Codename} | Terminator Session {session_id}
@@ -214,14 +288,29 @@ Execute your tasks completely without asking questions.
 ## YOUR MISSION
 Wave {W} | Terminal {N} | Project: {project}
 
-### Tasks (Execute in Order)
-1. **#{issue_number}** - {title}
-   - Description: {from issue body}
-   - Files likely affected: {inferred from issue}
-   - Acceptance: {from issue or inferred}
+## TECH STACK
+- **Language:** {TypeScript/Python/Rust/Go}
+- **Framework:** {Next.js/FastAPI/Axum/etc}
+- **Test command:** `{npm test / pytest / cargo test}`
+- **Build command:** `{npm run build / cargo build}`
+- **Lint command:** `{npm run lint / ruff check}`
 
-2. **#{issue_number}** - {title}
-   ...
+### Tasks (Execute in Order)
+
+#### Task 1: #{issue_number} - {title}
+**Plan:**
+- Objective: {what needs to be done}
+- Files: {specific files to modify}
+- Steps:
+  1. {Step 1}
+  2. {Step 2}
+  3. {Step 3}
+- Verify: `{test_command}`
+- Accept: {acceptance criteria}
+
+#### Task 2: #{issue_number} - {title}
+**Plan:**
+...
 
 ## AUTONOMOUS EXECUTION PROTOCOL
 
@@ -231,12 +320,13 @@ git checkout main && git pull
 git checkout -b {type}/GH-{issue}-{slug}
 ```
 
-### Step 2: Execute Each Task
+### Step 2: Execute Each Task (PLAN → EXECUTE → VERIFY)
 For each task:
-1. Read relevant files first
-2. Implement the fix/feature
-3. Run verification: `npm test` (or project equivalent)
-4. **Atomic commit:**
+1. **PLAN:** Read the plan above, understand the objective
+2. **READ:** Read relevant files first - understand before changing
+3. **EXECUTE:** Implement the fix/feature following the plan
+4. **VERIFY:** Run verification: `{test_command}`
+5. **COMMIT:** Atomic commit:
    ```bash
    git add {specific files only}
    git commit -m "#{issue} {type}: {description}"
@@ -412,7 +502,7 @@ When all agents in a wave complete:
 gh pr list --state open --json number,title,headRefName,author
 
 # Check test status
-npm test 2>&1 | tail -20
+{test_command} 2>&1 | tail -20
 
 # Check for conflicts
 git fetch origin main
@@ -426,7 +516,7 @@ git checkout -b integration-wave-{W}
 for branch in fix/GH-* feat/GH-*; do
   git merge $branch --no-edit || echo "CONFLICT: $branch"
 done
-npm test
+{test_command}
 ```
 
 ### 7.3 Verification Report
@@ -646,7 +736,8 @@ WAVE 2 (after Wave 1 verified):
 | Phase | Action |
 |-------|--------|
 | 1. Activation | Gather project, terminals, focus, mode |
-| 2. Reconnaissance | Scan issues, local tasks, git status |
+| 2. Reconnaissance | Scan issues, local tasks, git status, tech stack |
+| 2.5. Planning | Create mini-plans for each task (GSD-style) |
 | 3. Wave Analysis | Group tasks by dependencies |
 | 4. State Init | Create session state locally + memory |
 | 5. Prompt Gen | Generate autonomous agent prompts |

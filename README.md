@@ -4,10 +4,21 @@
 
 Coordinate work across multiple Claude Code terminal instances, distributing tasks intelligently and generating autonomous, self-contained prompts for each agent.
 
+## Quick Start
+
+```bash
+# Start each terminal with:
+claude --dangerously-skip-permissions
+```
+
+> **Important:** Terminator is designed for frictionless automation. The `--dangerously-skip-permissions` flag prevents agents from stopping to approve every `git commit` or `npm test`.
+
 ## Features
 
 - **Wave-based Parallelization** - Group tasks by dependencies, execute in parallel within waves
+- **Plan-First Execution** - GSD-style planning before execution (PLAN → EXECUTE → VERIFY)
 - **Autonomous Execution** - Agents handle deviations automatically (auto-fix bugs, auto-add deps)
+- **Tech Stack Detection** - Auto-detect framework, test runner, build commands
 - **GSD Integration** - Works with [Get Shit Done](https://github.com/glittercowboy/get-shit-done) workflow system
 - **Multi-Terminal Coordination** - File locking, status broadcasting, cross-agent communication
 - **GitHub Sync** - Auto-update issues, create PRs, manage labels
@@ -21,9 +32,7 @@ Coordinate work across multiple Claude Code terminal instances, distributing tas
 | `autonomous` | Agents self-execute with deviation handling | "Terminator, autonomous mode" |
 | `gsd-integrated` | Use GSD workflow if installed | Projects with `.planning/` |
 
-## Quick Start
-
-### Installation
+## Installation
 
 Copy the agent and command files to your Claude Code configuration:
 
@@ -41,7 +50,7 @@ cp terminator-agent/commands/terminator.md ~/.claude/commands/
 mkdir -p ~/.terminator
 ```
 
-### Usage
+## Usage
 
 ```bash
 # Standard mode
@@ -65,7 +74,7 @@ mkdir -p ~/.terminator
 - "Terminator, status"
 - "Terminator, resume session {id}"
 
-## How It Works
+## Workflow Phases
 
 ### Phase 1: Activation
 Gather project, terminal count, focus area (bugs/features/tech debt), and mode.
@@ -74,7 +83,29 @@ Gather project, terminal count, focus area (bugs/features/tech debt), and mode.
 - Scan GitHub issues
 - Check local TODO.md, ROADMAP.md
 - Analyze git status and open PRs
+- **Detect tech stack** (framework, test runner, build commands)
 - Detect GSD installation
+
+### Phase 2.5: Planning (GSD-Style)
+Create explicit mini-plans for each task:
+```markdown
+## Task Plan: #101 - Fix auth null pointer
+
+### Objective
+Handle null user in auth middleware
+
+### Files to Modify
+- `src/auth/middleware.ts` - Add null check
+
+### Implementation Steps
+1. Read existing middleware code
+2. Add null check before accessing user properties
+3. Run tests: `npm test`
+
+### Verification
+- [ ] `npm test` passes
+- [ ] `npm run lint` passes
+```
 
 ### Phase 3: Wave Analysis
 Group tasks into waves based on dependencies:
@@ -103,36 +134,23 @@ Group tasks into waves based on dependencies:
 
 ### Phase 5: Autonomous Agent Prompts
 Generate copy-paste ready prompts for each terminal with:
-- Task assignments
+- **Tech stack info** (test/build/lint commands)
+- **Task plans** with specific steps
 - Deviation handling rules
 - Atomic commit protocol
 - File locking coordination
-- Completion/blocker reporting
 
-### Phase 6: Monitoring
-Track progress with commands:
-- `status` - Show all agent progress
-- `wave` - Show current wave status
-- `reassign #task -> T{n}` - Move task
-- `verify` - Run verification
-- `complete` - End session
+### Phase 6-9: Execution, Verification, GitHub Sync, Completion
 
-### Phase 7: Verification
-After each wave:
-- Check PRs created
-- Run integration tests
-- Identify conflicts
-- Generate verification report
+## Agent Execution Protocol
 
-### Phase 8: GitHub Sync
-- Update issue labels
-- Comment on assignments/completions
-- Manage PRs
+Each agent follows **PLAN → EXECUTE → VERIFY**:
 
-### Phase 9: Completion
-- Final report with metrics
-- Compound learnings to memory
-- Archive session state
+1. **PLAN:** Read the plan, understand the objective
+2. **READ:** Read relevant files first - understand before changing
+3. **EXECUTE:** Implement the fix/feature following the plan
+4. **VERIFY:** Run verification: `{test_command}`
+5. **COMMIT:** Atomic commit with proper message format
 
 ## Deviation Handling
 
@@ -169,7 +187,7 @@ If project has GSD installed (`.planning/` exists):
 
 ## Requirements
 
-- Claude Code CLI
+- Claude Code CLI with `--dangerously-skip-permissions`
 - GitHub CLI (`gh`) authenticated
 - Claude Flow memory system (optional, for cross-terminal coordination)
 - GSD (optional, for integrated planning)

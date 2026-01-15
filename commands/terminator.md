@@ -2,6 +2,15 @@
 
 Coordinate parallel development workflows across multiple terminal instances with autonomous execution.
 
+## IMPORTANT: Terminal Setup
+
+**Each terminal MUST be started with:**
+```bash
+claude --dangerously-skip-permissions
+```
+
+This enables frictionless automation.
+
 ## Arguments
 $ARGUMENTS - Optional: "activate {project}", "autonomous {project}", "resume {session_id}", "status"
 
@@ -27,21 +36,32 @@ $ARGUMENTS - Optional: "activate {project}", "autonomous {project}", "resume {se
    - Fetch GitHub issues: `gh issue list --state open --json number,title,labels,body`
    - Check local tasks: `TODO.md`, `ROADMAP.md`, `.planning/STATE.md`
    - Check git status: branches, PRs, uncommitted changes
+   - **Detect tech stack:** package.json, pyproject.toml, Cargo.toml
    - Analyze dependencies for wave-based parallelization
 
-5. **Present Wave Analysis:**
+5. **Create Task Plans (GSD-Style):**
+   - For each task, create a mini-plan:
+     - Objective
+     - Files to modify
+     - Implementation steps
+     - Verification command
+     - Acceptance criteria
+
+6. **Present Wave Analysis:**
    - Show task distribution by wave (dependencies respected)
+   - Include tech stack info
    - Identify blockers requiring input
    - Wait for user confirmation
 
-6. **Initialize State:**
+7. **Initialize State:**
    - Create `~/.terminator/state.json`
    - Store to Claude Flow memory namespace
    - Create local STATE.md
 
-7. **Generate Agent Prompts:**
+8. **Generate Agent Prompts:**
    - Create self-contained prompt for each terminal
-   - Include: tasks, branch naming, commit format, deviation handling, completion protocol
+   - Include: tech stack, task plans, branch naming, commit format, deviation handling
+   - **Add reminder:** `claude --dangerously-skip-permissions`
    - Present as copy-paste ready blocks
 
 ### If $ARGUMENTS starts with "autonomous":
@@ -50,6 +70,7 @@ $ARGUMENTS - Optional: "activate {project}", "autonomous {project}", "resume {se
 
 Same as standard mode, but agent prompts include:
 - Full deviation handling rules (auto-fix, auto-add, escalation)
+- PLAN → EXECUTE → VERIFY workflow
 - Atomic commit protocol
 - File locking coordination
 - Status reporting to memory namespace
@@ -141,3 +162,4 @@ If project has `.planning/` directory (GSD installed):
 - **Registry:** Tier 1.6
 - **State:** `~/.terminator/state.json` + Claude Flow memory
 - **Modes:** standard, autonomous, gsd-integrated
+- **Terminal:** `claude --dangerously-skip-permissions`
