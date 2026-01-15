@@ -1,0 +1,10 @@
+# State files (user-specific)
+*.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,31 @@
+{
+  "session_id": "term-YYYYMMDD-XXXXXX",
+  "project": "owner/repo",
+  "focus": "bugs",
+  "agents": [
+    {
+      "id": 1,
+      "codename": "Alpha",
+      "status": "pending",
+      "tasks": ["#101", "#102"],
+      "branch": null,
+      "terminal": 1
+    },
+    {
+      "id": 2,
+      "codename": "Bravo",
+      "status": "pending",
+      "tasks": ["#103"],
+      "branch": null,
+      "terminal": 2
+    }
+  ],
+  "completed": [],
+  "blocked": [],
+  "queue": [],
+  "metrics": {
+    "startTime": null,
+    "endTime": null,
+    "humanInterventions": 0
+  }
+}
